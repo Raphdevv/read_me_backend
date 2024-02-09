@@ -6,7 +6,7 @@ const dynamodb = require('../dynamoDB');
 
 var response = new APIResponse(false,"",null);
 
-router.post('/users', async (req, res) => {
+router.post('/createusers', async (req, res) => {
     var status = 200;
     try {
         const {firstname, lastname, username, email, password, image, sex} = req.body;
@@ -50,7 +50,6 @@ router.post('/users', async (req, res) => {
         res.status(status).json(response.toDbObject());
     }
 });
-
 
 router.get('/', async (req, res) => {
     try {
