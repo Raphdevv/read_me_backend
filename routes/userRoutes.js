@@ -13,7 +13,7 @@ router.post('/createusers', async (req, res) => {
 
         const currentYear = new Date().getFullYear();
 
-         const paramsUser = {
+         const paramsEmail = {
             TableName: 'user_table',
             FilterExpression: '#email = :emailValue',
             ExpressionAttributeNames: {
@@ -23,13 +23,32 @@ router.post('/createusers', async (req, res) => {
                 ':emailValue': email 
             }
         };
+
+        const paramsUser = {
+            TableName: 'user_table',
+            FilterExpression: '#username = :usernameValue',
+            ExpressionAttributeNames: {
+                '#username': 'username' 
+            },
+            ExpressionAttributeValues: {
+                ':usernameValue': username 
+            }
+        };
         var getUser = await dynamodb.scan(paramsUser).promise();
+        var getEmail = await dynamodb.scan(paramsEmail).promise();
+
+        console.log(getUser);
+        console.log(getEmail);
         
-        if(getUser != null){
+        if (getUser.Count != 0) {
+            status = 404;
+            response.success = false;
+            response.message = 'This username has already been used.';
+        } else if (getEmail.Count != 0) {
             status = 404;
             response.success = false;
             response.message = 'This email has already been used.';
-        }else{
+        } else{
              const newUsercode = await generateUserCode(currentYear);
              const newUser = new User(newUsercode, firstname, lastname, null, username, email, password, image, sex, null, null, null, null, null);
              const params = {
