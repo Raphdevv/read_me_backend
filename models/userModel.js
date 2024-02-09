@@ -1,7 +1,6 @@
 class User {
-    constructor(usercode, id, firstname, lastname, idCard, username, email, password, image, sex, cartcode, favcode, writingcode, followercode, followeingcode) {
+    constructor(usercode, firstname, lastname, idCard, username, email, password, image, sex, cartcode, favcode, writingcode, followercode, followingcode) {
         this.usercode = usercode;
-        this.id = id;
         this.firstname = firstname;
         this.lastname = lastname;
         this.idCard = idCard;
@@ -20,7 +19,6 @@ class User {
     static fromDbObject(dbObject) {
         return new User(
             dbObject.usercode,
-            dbObject.id,
             dbObject.firstname,
             dbObject.lastname,
             dbObject.idCard,
@@ -40,7 +38,6 @@ class User {
     toDbObject() {
         return {
             usercode: this.usercode,
-            id: this.id,
             firstname: this.firstname,
             lastname: this.lastname,
             idCard: this.idCard,

@@ -7,6 +7,6 @@ AWS.config.update({
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
 });
 
-var ddb = new AWS.DynamoDB({ apiVersion: "2024-02-05" });
+const dynamodb = new AWS.DynamoDB.DocumentClient();
 
-module.exports = ddb;
+module.exports = dynamodb;
