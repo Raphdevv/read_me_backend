@@ -1,5 +1,5 @@
 class User {
-    constructor(usercode, firstname, lastname, idCard, username, email, password, image, sex, cartcode, favcode, writingcode, followercode, followingcode) {
+    constructor(usercode, firstname, lastname, idCard, username, email, password, image, sex, cartcode, favcode, writingcode, followercode, followingcode, create_date, update_date) {
         this.usercode = usercode;
         this.firstname = firstname;
         this.lastname = lastname;
@@ -14,6 +14,8 @@ class User {
         this.writingcode = writingcode;
         this.followercode = followercode;
         this.followingcode = followingcode;
+        this.create_date = create_date;
+        this.update_date = update_date;
     }
 
     static fromDbObject(dbObject) {
@@ -32,6 +34,8 @@ class User {
             dbObject.writingcode,
             dbObject.followercode,
             dbObject.followingcode,
+            dbObject.create_date,
+            dbObject.update_date,
         );
     }
 
@@ -51,6 +55,8 @@ class User {
             writingcode: this.writingcode,
             followercode: this.followercode,
             followingcode: this.followingcode,
+            create_date: this.create_date,
+            update_date: this.update_date,
         };
     }
 }

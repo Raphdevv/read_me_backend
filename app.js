@@ -22,7 +22,7 @@ io.on('connection', (socket) => {
 });
 
 app.use(bodyParser.json());
-app.use('/api', userRoutes);
+app.use('/api/user', userRoutes);
 
 
 const PORT = process.env.PORT || 3000;

@@ -2,9 +2,14 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/userModel');
 const APIResponse = require('../models/apiResponse');
+const { LoginModel, LoginResponseModel } = require('../models/loginModel'); 
 const dynamodb = require('../dynamoDB');
+const { verifyToken, generateToken } = require('../middleware/auth');
+const { encryptPassword, comparePassword } = require('../middleware/passwordcode');
+const moment = require('moment-timezone');
 
 var response = new APIResponse(false,"",null);
+const thaiTime = moment.tz('Asia/Bangkok');
 
 router.post('/createusers', async (req, res) => {
     var status = 200;
@@ -12,6 +17,7 @@ router.post('/createusers', async (req, res) => {
         const {firstname, lastname, username, email, password, image, sex} = req.body;
 
         const currentYear = new Date().getFullYear();
+        const currentDate = thaiTime.format('DD-MM-YYYY HH:mm:ss');
 
          const paramsEmail = {
             TableName: 'user_table',
@@ -36,9 +42,6 @@ router.post('/createusers', async (req, res) => {
         };
         var getUser = await dynamodb.scan(paramsUser).promise();
         var getEmail = await dynamodb.scan(paramsEmail).promise();
-
-        console.log(getUser);
-        console.log(getEmail);
         
         if (getUser.Count != 0) {
             status = 404;
@@ -49,9 +52,10 @@ router.post('/createusers', async (req, res) => {
             response.success = false;
             response.message = 'This email has already been used.';
         } else{
-             const newUsercode = await generateUserCode(currentYear);
-             const newUser = new User(newUsercode, firstname, lastname, null, username, email, password, image, sex, null, null, null, null, null);
-             const params = {
+            var encrypt = await encryptPassword(username);
+            const newUsercode = await generateUserCode(currentYear);
+            const newUser = new User(newUsercode, firstname, lastname, null, username, email, encrypt, image, sex, null, null, null, null, null,currentDate,currentDate);
+            const params = {
                 TableName: 'user_table',
                 Item: newUser.toDbObject()
             };
@@ -70,11 +74,68 @@ router.post('/createusers', async (req, res) => {
     }
 });
 
-router.get('/', async (req, res) => {
+router.post('/login', async (req, res) => {
+    var status = 200;
     try {
-        res.status(200).json({ message: 'User created successfully' });
+        const {email, password} = req.body;
+
+        const currentDate = thaiTime.format('DD-MM-YYYY HH:mm:ss');
+
+        const paramsEmail = {
+            TableName: 'user_table',
+            FilterExpression: '#email = :emailValue',
+            ExpressionAttributeNames: {
+                '#email': 'email' 
+            },
+            ExpressionAttributeValues: {
+                ':emailValue': email 
+            }
+        };
+
+        var getEmail = await dynamodb.scan(paramsEmail).promise();
+        if(getEmail.Items.Count != 0) {
+            var isDecrypt = await comparePassword(password,getEmail.Items[0].password);
+            if(!isDecrypt) {
+                const exp = Math.floor(Date.now() / 1000) + 129600;
+                const iat = Math.floor(Date.now() / 1000);
+                var token = await generateToken(getEmail.Items[0].username, exp, iat);
+                var responseUser = new LoginResponseModel(
+                    getEmail.Items[0].usercode,
+                    getEmail.Items[0].firstname,
+                    getEmail.Items[0].lastname,
+                    getEmail.Items[0].username,
+                    getEmail.Items[0].email,
+                    getEmail.Items[0].image,
+                    getEmail.Items[0].sex,
+                    token,
+                );
+                var login = new LoginModel(getEmail.Items[0].usercode, token, currentDate, currentDate);
+                const paramsLogin = {
+                    TableName: "userlogin_table",
+                    Item: login.toDbObject()
+                }
+                await dynamodb.put(paramsLogin).promise();
+                status = 200;
+                response.success = true;
+                response.message = "susccess";
+                response.data = responseUser.toDbObject();
+            } else {
+                status = 404;
+                response.success = false;
+                response.message = "Password is incorrect.";
+            }
+        } else {
+            status = 404;
+            response.success = false;
+            response.message = "Email not found.";
+        }
+
+        res.status(status).json(response.toDbObject());
     } catch (error) {
-        res.status(500).json({ error: "Error creating user" });
+        status = 500;
+        response.success = false;
+        response.message = error.message;
+        res.status(status).json(response.toDbObject());
     }
 });
 
